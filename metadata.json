@@ -1,0 +1,6 @@
+{
+  "name": "Mine Tou 2",
+  "description": "A visual phonebook app designed to help illiterate users make calls by tapping on photos instead of reading names or numbers.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
