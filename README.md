@@ -9,6 +9,7 @@
   <br/><br/>
 
   [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
+  [![Google Play](https://img.shields.io/badge/Google_Play-Disponible_en_Production-414141?style=for-the-badge&logo=googleplay&logoColor=4175F5)](https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI)
   [![Kotlin](https://img.shields.io/badge/Language-Kotlin%20100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
   [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
   [![Room](https://img.shields.io/badge/Database-Room%20SQLite-4285F4?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
@@ -20,10 +21,41 @@
   </p>
 
   <p align="center">
+    🌱 <em>Cette application représente la version majeure et modernisée du projet original <strong>Mine Tou</strong>, conçu fin 2023 à la suite d'une formation en ligne spécialisée en développement d'applications mobiles.</em>
+  </p>
+
+  <p align="center">
     💡 Conçu et développé par <strong>Mamadou Bobo Diallo (Tictos)</strong> en collaboration avec l'<strong>Intelligence Artificielle (IA)</strong>.
   </p>
 
 </div>
+
+---
+
+## 📲 Disponible en Production sur le Google Play Store !
+
+> 🟢 **L'application Mine Tou est officiellement en ligne et disponible en téléchargement gratuit !**
+>
+> [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png" alt="Disponible sur Google Play" height="80">](https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI)
+>
+> 🔗 **Lien direct Play Store** : [https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI](https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI)  
+> *(Note : Remplacez `VOTRE_PACKAGE_ICI` par le lien direct ou le nom de paquet de votre fiche Google Play Console)*
+
+---
+
+## 📖 La Petite Histoire : Comment est née l'idée de Mine Tou ?
+
+> *"En grandissant en famille chez mon père et ma mère, j'étais continuellement sollicité pour composer des numéros de téléphone afin de passer des appels : pour mes parents, nos voisines, mes oncles... En réalité, dès l'instant où j'ai su lire, je suis devenu la personne indispensable du foyer pour tout ce qui touchait au téléphone.*
+>
+> *C'est une expérience d'enfance très répandue et familière en Afrique. Mais la véritable étincelle est survenue plus tard, fin 2023, pendant que je suivais ma formation en ligne en développement d'applications mobiles.*
+>
+> *Ma mère se rendait souvent au village en me laissant en ville. Lorsqu'elle arrivait à destination, il lui était très compliqué de nous faire savoir qu'elle était bien arrivée. Nous avions même développé une astuce artisanale : nous composions le numéro de l'un d'entre nous juste avant son départ afin qu'il se retrouve tout en haut de son journal d'appels. Une fois arrivée, elle n'avait qu'à rappeler le tout dernier numéro.*
+>
+> *Mais comme vous pouvez l'imaginer, cette méthode ne fonctionnait que si elle ne recevait aucun autre appel durant le trajet ! Si quelqu'un l'appelait en chemin, l'historique était décalé et le système tombait à l'eau.*
+>
+> *C'est de ce besoin réel et du vécu quotidien qu'est née l'idée de **Mine Tou** — la toute première application que j'ai imaginée, conçue et développée, pour offrir une autonomie totale et sans frustration à ma mère ainsi qu'à toutes les familles dans la même situation."*
+>
+> — **Mamadou Bobo Diallo (Tictos)**
 
 ---
 
@@ -36,6 +68,13 @@
 | **Méthodologie** | Développement moderne assisté par l'**Intelligence Artificielle (IA)** |
 | **Spécialités** | Kotlin, Jetpack Compose, Architecture Android moderne (MVVM / Clean Architecture), Persistance Room & UI/UX Inclusive |
 | **Portfolio / Contact** | [![Email](https://img.shields.io/badge/Contact-Email-D14836?style=flat-square&logo=gmail&logoColor=white)](mailto:tictos1213@gmail.com) [![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/) [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/) |
+
+---
+
+## 🌱 Origine & Évolution du Projet
+
+- **La Genèse (Fin 2023)** : Le projet initial **Mine Tou** a vu le jour à la fin de l'année 2023, développé par **Mamadou Bobo Diallo** à la suite d'une formation en ligne intensive sur le développement d'applications mobiles. L'objectif était alors de créer une solution concrète d'inclusion numérique pour les membres de la communauté et les proches ayant des difficultés de lecture.
+- **La Nouvelle Génération (Version Améliorée)** : Cette nouvelle itération repense intégralement l'application avec les standards Android les plus récents (**Kotlin**, **Jetpack Compose**, **Room SQLite**, **Material 3**) et intègre des innovations majeures : déclenchement d'appels par double-clic sur la photo, stockage d'images privé et compressé, et système universel d'export/import CSV avec photos intégrées en Base64 pour des transferts 100% hors-ligne.
 
 ---
 
