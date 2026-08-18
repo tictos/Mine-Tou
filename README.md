@@ -3,7 +3,8 @@
 <div align="center">
 
   <!-- Logo / Hero Banner Placeholder -->
-  <img width="1376" height="768" alt="Mine Tou Hero Banner" src="https://github.com/user-attachments/assets/3166a988-e52b-424d-a37b-40320ba179ad" />
+  <img width="1376" height="768" alt="a_professional_horizontal_presentation_banner_for_the_mobile_app_mine_tou" src="https://github.com/user-attachments/assets/ba76794d-9d9c-481f-826c-5d5274ff8bbe" />
+
 
   <br/><br/>
 
