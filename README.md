@@ -53,7 +53,7 @@ Ce projet illustre une approche novatrice du développement logiciel mobile adap
 
 | 1. Répertoire Visuel & Double-Tap | 2. Ajout / Édition Contact | 3. Sauvegarde & Export CSV | 4. Journal d'Appels Filtré |
 | :---: | :---: | :---: | :---: |
-| <img width="1080" height="2400" alt="Répertoire Visuel" src="https://github.com/user-attachments/assets/066d9c8a-3a3a-4e0f-8c7e-d8b3fe0d3750" /> | <img width="1080" height="2400" alt="Ajout Contact" src="https://github.com/user-attachments/assets/19595b95-942a-416d-a855-55487e7b67b1" /> | <img width="1080" height="2400" alt="Export CSV" src="https://github.com/user-attachments/assets/f08a1236-917f-4020-94a5-13ea718cafdf" /> | <img width="1080" height="2400" alt="Historique Appels" src="https://github.com/user-attachments/assets/ecdbade6-2361-4401-864d-e5d690c98f12" /> |
+| <img width="1080" height="2400" alt="1000255457" src="https://github.com/user-attachments/assets/378e9532-c561-4600-94a2-3d89e9b3aab2" /> | <img width="1080" height="2400" alt="1000255464" src="https://github.com/user-attachments/assets/40d4431d-f546-42ec-a2eb-d4697407c3b6" />| <img width="1080" height="2400" alt="1000255465" src="https://github.com/user-attachments/assets/2cfeefae-7337-4650-aeb2-a69853a48077" /> | <img width="1080" height="2400" alt="1000255466" src="https://github.com/user-attachments/assets/df678ae0-f9e7-41b3-b75f-6cd01751eade" /> |
 
 </div>
 
