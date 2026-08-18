@@ -71,7 +71,7 @@ Ce projet illustre une approche novatrice du développement logiciel mobile adap
 ### ⚡ 2. Appel Instantané par Double-Tap (Double Click to Call)
 - **Déclenchement d'un geste** : Un double-toucher rapide directement sur la photo du contact lance l'appel téléphonique automatiquement.
 - **Bouton d'appel classique** : Présence d'un bouton d'appel avec icône téléphone dédiée pour ceux qui préfèrent une action explicite.
-- **Confirmation & Gestion des permissions** : Demande dynamique et fluide des autorisations `CALL_PHONE` et `READ_CALL_LOG`.
+- **Confirmation & Gestion des permissions** : Demande dynamique et fluide de l'autorisation d'appel `CALL_PHONE`.
 
 ---
 

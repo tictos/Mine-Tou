@@ -43,7 +43,6 @@ import com.example.R
 import com.example.data.Contact
 import com.example.viewmodel.ContactsViewModel
 
-import android.provider.CallLog
 import androidx.compose.material.icons.filled.CallMade
 import androidx.compose.material.icons.filled.CallMissed
 import androidx.compose.material.icons.filled.CallReceived
@@ -82,7 +81,9 @@ fun ContactsScreen(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted && pendingCallNumber != null) {
-            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:${pendingCallNumber}")).apply {
+            val num = pendingCallNumber!!
+            viewModel.registerCall(num)
+            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$num")).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
             context.startActivity(intent)
@@ -90,25 +91,8 @@ fun ContactsScreen(
         }
     }
 
-    val callLogPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            viewModel.loadCallLogs(context)
-        }
-    }
-
-    LaunchedEffect(selectedTab) {
-        if (selectedTab == 1) {
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
-                viewModel.loadCallLogs(context)
-            } else {
-                callLogPermissionLauncher.launch(Manifest.permission.READ_CALL_LOG)
-            }
-        }
-    }
-
     val makeCall = { number: String ->
+        viewModel.registerCall(number)
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -145,17 +129,17 @@ fun ContactsScreen(
                                 onDismissRequest = { showMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Exporter les contacts") },
+                                    text = { Text("Exporter les contacts (CSV)") },
                                     onClick = {
                                         showMenu = false
-                                        exportLauncher.launch("contacts_backup.json")
+                                        exportLauncher.launch("contacts_backup.csv")
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Importer des contacts") },
+                                    text = { Text("Importer des contacts (CSV)") },
                                     onClick = {
                                         showMenu = false
-                                        importLauncher.launch(arrayOf("application/json", "*/*"))
+                                        importLauncher.launch(arrayOf("text/comma-separated-values", "text/csv", "*/*"))
                                     }
                                 )
                             }
@@ -454,10 +438,10 @@ fun CallLogCard(
             
             // Call type icon overlay at the bottom right
             val (icon, color) = when (log.callType) {
-                CallLog.Calls.OUTGOING_TYPE -> Pair(Icons.Default.CallMade, Color(0xFF81C784)) // Green
-                CallLog.Calls.INCOMING_TYPE -> Pair(Icons.Default.CallReceived, Color(0xFF4DD0E1)) // Cyan
-                CallLog.Calls.MISSED_TYPE -> Pair(Icons.Default.CallMissed, Color(0xFFE57373)) // Red
-                else -> Pair(Icons.Default.Phone, Color.Gray)
+                2 -> Pair(Icons.Default.CallMade, Color(0xFF81C784)) // Outgoing: Green
+                1 -> Pair(Icons.Default.CallReceived, Color(0xFF4DD0E1)) // Incoming: Cyan
+                3 -> Pair(Icons.Default.CallMissed, Color(0xFFE57373)) // Missed: Red
+                else -> Pair(Icons.Default.CallMade, Color(0xFF81C784))
             }
             
             Box(

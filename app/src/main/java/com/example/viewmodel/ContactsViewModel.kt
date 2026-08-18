@@ -1,12 +1,8 @@
 package com.example.viewmodel
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.provider.CallLog
 import android.widget.Toast
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -37,45 +33,25 @@ class ContactsViewModel(private val repository: ContactRepository) : ViewModel()
     private val _callLogs = MutableStateFlow<List<CallLogEntry>>(emptyList())
     val callLogs: StateFlow<List<CallLogEntry>> = _callLogs.asStateFlow()
 
-    fun loadCallLogs(context: Context) {
-        viewModelScope.launch(Dispatchers.IO) {
+    fun registerCall(contact: Contact) {
+        val newEntry = CallLogEntry(
+            id = java.util.UUID.randomUUID().toString(),
+            contact = contact,
+            timestamp = System.currentTimeMillis(),
+            callType = 2
+        )
+        _callLogs.value = listOf(newEntry) + _callLogs.value.filterNot { it.contact.id == contact.id && System.currentTimeMillis() - it.timestamp < 1000 }
+    }
+
+    fun registerCall(phoneNumber: String) {
+        viewModelScope.launch {
             val contacts = repository.allContacts.first()
-            val callLogEntries = mutableListOf<CallLogEntry>()
-            
-            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CALL_LOG) == PackageManager.PERMISSION_GRANTED) {
-                val cursor = context.contentResolver.query(
-                    CallLog.Calls.CONTENT_URI,
-                    arrayOf(CallLog.Calls._ID, CallLog.Calls.NUMBER, CallLog.Calls.DATE, CallLog.Calls.TYPE),
-                    null,
-                    null,
-                    CallLog.Calls.DATE + " DESC"
-                )
-                
-                cursor?.use {
-                    val idIdx = it.getColumnIndex(CallLog.Calls._ID)
-                    val numberIdx = it.getColumnIndex(CallLog.Calls.NUMBER)
-                    val dateIdx = it.getColumnIndex(CallLog.Calls.DATE)
-                    val typeIdx = it.getColumnIndex(CallLog.Calls.TYPE)
-                    
-                    while (it.moveToNext()) {
-                        val id = it.getString(idIdx)
-                        val number = it.getString(numberIdx) ?: ""
-                        val date = it.getLong(dateIdx)
-                        val type = it.getInt(typeIdx)
-                        
-                        val normalizedNumber = number.replace("\\s".toRegex(), "")
-                        val matchedContact = contacts.find { c -> 
-                            val dbNum = c.phoneNumber.replace("\\s".toRegex(), "")
-                            normalizedNumber.endsWith(dbNum) || dbNum.endsWith(normalizedNumber)
-                        }
-                        
-                        if (matchedContact != null) {
-                            callLogEntries.add(CallLogEntry(id, matchedContact, date, type))
-                        }
-                    }
-                }
-            }
-            _callLogs.value = callLogEntries
+            val normalizedNumber = phoneNumber.replace("\\s".toRegex(), "")
+            val matchedContact = contacts.find { c -> 
+                val dbNum = c.phoneNumber.replace("\\s".toRegex(), "")
+                (normalizedNumber.isNotBlank() && dbNum.isNotBlank()) && (normalizedNumber.endsWith(dbNum) || dbNum.endsWith(normalizedNumber))
+            } ?: Contact(name = phoneNumber, phoneNumber = phoneNumber, imageUri = null)
+            registerCall(matchedContact)
         }
     }
 
