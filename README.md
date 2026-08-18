@@ -1,0 +1,180 @@
+# 🚀 Mine Tou — Répertoire Visuel & Téléphonie Inclusive
+
+<div align="center">
+
+  <!-- Logo / Hero Banner Placeholder -->
+  <img width="1376" height="768" alt="Mine Tou Hero Banner" src="https://github.com/user-attachments/assets/3166a988-e52b-424d-a37b-40320ba179ad" />
+
+  <br/><br/>
+
+  [![Android](https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)](https://developer.android.com)
+  [![Kotlin](https://img.shields.io/badge/Language-Kotlin%20100%25-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white)](https://kotlinlang.org)
+  [![Jetpack Compose](https://img.shields.io/badge/UI-Jetpack%20Compose-4285F4?style=for-the-badge&logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
+  [![Room](https://img.shields.io/badge/Database-Room%20SQLite-4285F4?style=for-the-badge&logo=sqlite&logoColor=white)](https://developer.android.com/training/data-storage/room)
+  [![Architecture](https://img.shields.io/badge/Architecture-MVVM%20%2B%20Flow-FF6D00?style=for-the-badge)](https://developer.android.com/topic/architecture)
+  [![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
+
+  <p align="center">
+    <strong>Mine Tou</strong> est une application Android moderne, inclusive et épurée conçue pour réinventer l'accès aux appels téléphoniques grâce à un répertoire 100% visuel basé sur de grandes photos, idéal pour les personnes illettrées, les seniors et tous ceux qui privilégient l'image au texte.
+  </p>
+
+  <p align="center">
+    💡 Conçu et développé par <strong>Mamadou Bobo Diallo (Tictos)</strong> en collaboration avec l'<strong>Intelligence Artificielle (IA)</strong>.
+  </p>
+
+</div>
+
+---
+
+## 👨‍💻 À propos de l'Auteur & Portfolio
+
+| Développeur | **Mamadou Bobo Diallo** |
+| :--- | :--- |
+| **Surnom / Pseudo** | **Tictos** |
+| **Rôle** | Concepteur & Développeur Android / Mobile |
+| **Méthodologie** | Développement moderne assisté par l'**Intelligence Artificielle (IA)** |
+| **Spécialités** | Kotlin, Jetpack Compose, Architecture Android moderne (MVVM / Clean Architecture), Persistance Room & UI/UX Inclusive |
+| **Portfolio / Contact** | [![Email](https://img.shields.io/badge/Contact-Email-D14836?style=flat-square&logo=gmail&logoColor=white)](mailto:tictos1213@gmail.com) [![GitHub](https://img.shields.io/badge/GitHub-Profile-181717?style=flat-square&logo=github&logoColor=white)](https://github.com/) [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=flat-square&logo=linkedin&logoColor=white)](https://linkedin.com/) |
+
+---
+
+## 🤖 Conception & Collaboration avec l'IA
+
+Ce projet illustre une approche novatrice du développement logiciel mobile adapté aux besoins d'accessibilité :
+- **Architecture & Code** : Structuré et raffiné avec l'assistance de modèles d'IA générative pour accélérer le prototypage, optimiser les algorithmes de compression et d'encodage d'images (Base64 / CSV autonome) et garantir les meilleures pratiques Jetpack Compose & Material Design 3.
+- **Direction Artistique & Logique Métier** : Conçues et orchestrées par **Mamadou Bobo Diallo (Tictos)** pour offrir une expérience utilisateur ultra-simplifiée, sans friction cognitive, et résistante aux pertes de données.
+
+---
+
+## 📸 Galerie & Captures d'Écran (Showcase UI)
+
+<div align="center">
+
+| 1. Répertoire Visuel & Double-Tap | 2. Ajout / Édition Contact | 3. Sauvegarde & Export CSV | 4. Journal d'Appels Filtré |
+| :---: | :---: | :---: | :---: |
+| <img width="1080" height="2400" alt="Répertoire Visuel" src="https://github.com/user-attachments/assets/066d9c8a-3a3a-4e0f-8c7e-d8b3fe0d3750" /> | <img width="1080" height="2400" alt="Ajout Contact" src="https://github.com/user-attachments/assets/19595b95-942a-416d-a855-55487e7b67b1" /> | <img width="1080" height="2400" alt="Export CSV" src="https://github.com/user-attachments/assets/f08a1236-917f-4020-94a5-13ea718cafdf" /> | <img width="1080" height="2400" alt="Historique Appels" src="https://github.com/user-attachments/assets/ecdbade6-2361-4401-864d-e5d690c98f12" /> |
+
+</div>
+
+---
+
+## ✨ Fonctionnalités Clés
+
+### 🖼️ 1. Répertoire 100% Visuel & Accessible (Visual Phonebook)
+- **Affichage grand format** : Cartes contacts en grille verticale avec de grandes photos claires et lisibles pour une identification visuelle instantanée.
+- **Saisie ultra-simplifiée** : Seuls la photo et le numéro sont nécessaires. Le champ *Nom* est facultatif (le numéro ou la photo suffisent).
+- **Accessibilité universelle** : Pensé pour les personnes non lectrices, les personnes âgées ou les utilisateurs pressés souhaitant appeler un visage plutôt qu'un texte.
+
+---
+
+### ⚡ 2. Appel Instantané par Double-Tap (Double Click to Call)
+- **Déclenchement d'un geste** : Un double-toucher rapide directement sur la photo du contact lance l'appel téléphonique automatiquement.
+- **Bouton d'appel classique** : Présence d'un bouton d'appel avec icône téléphone dédiée pour ceux qui préfèrent une action explicite.
+- **Confirmation & Gestion des permissions** : Demande dynamique et fluide des autorisations `CALL_PHONE` et `READ_CALL_LOG`.
+
+---
+
+### 🛡️ 3. Gestionnaire de Photos Autonome & Stockage Interne Résilient
+- **Capture directe & Galerie** : Prise de photo instantanée avec la caméra ou sélection d'images depuis la galerie de l'appareil.
+- **Indépendance vis-à-vis de la Galerie** : Lors de l'enregistrement, la photo est copiée dans le répertoire interne privé de l'application (`filesDir/contact_photos`). Même si l'utilisateur supprime la photo de sa galerie, elle reste disponible dans l'application.
+- **Compression & Optimisation SQLite** : Redimensionnement automatique (max 500px) et compression JPEG (80%) pour garantir une application ultra-rapide et un poids minimal en mémoire.
+
+---
+
+### 📁 4. Sauvegarde & Migration CSV Autonome avec Photos Intégrées
+- **Exportation complète en `.csv`** : Génération d'un fichier CSV (`Name,PhoneNumber,ImageData`) contenant l'intégralité des contacts.
+- **Photos encodées en Base64** : Les photos sont directement sérialisées dans le fichier CSV, ce qui permet un partage de sauvegarde 100% hors-ligne (via WhatsApp, Bluetooth, Xender, etc.).
+- **Restauration instantanée sur un nouveau téléphone** : L'importation lit le fichier CSV, décode les photos et les réinstalle automatiquement dans le stockage interne du nouvel appareil.
+
+---
+
+### 📊 5. Journal d'Appels Visuel & Filtré
+- **Historique ciblé** : Affichage exclusif des appels entrants, sortants et manqués correspondant aux contacts de votre carnet visuel.
+- **Horodatages relatifs & Statuts** : Badges visuels de couleur pour distinguer les appels réussis et manqués.
+- **Rappel rapide** : Déclenchement d'appel direct par double-tap ou clic sur l'icône depuis l'onglet d'historique.
+
+---
+
+## 🏗️ Architecture & Technologies Utilisées
+
+```
+MineTou/
+│
+├── 🎨 UI Layer (Jetpack Compose + Material 3)
+│   ├── Screens (ContactsScreen, AddContactScreen, AddContactOptionsScreen)
+│   ├── Components (ContactCard, CallLogItem, CustomTopBar, SearchBar)
+│   ├── Navigation (AppNavigation, Type-safe Routes)
+│   └── Theme (Centralized ColorScheme, Dynamic Shapes & Typography)
+│
+├── 🧠 State & ViewModel (MVVM)
+│   └── ContactsViewModel (StateFlow, Coroutines, Compression & Parsing CSV)
+│
+├── 💾 Local Data Persistence (Room Database)
+│   ├── Entities (Contact)
+│   ├── DAOs (ContactDao - Flow reactive queries)
+│   ├── Repositories (ContactRepository)
+│   └── Database (AppDatabase SQLite)
+│
+└── 📦 Native Services & Helpers
+    ├── PhotoStorageManager (Compression Bitmap & Stockage interne)
+    ├── CallLogReader (Lecture & filtrage sécurisé du journal système)
+    └── CsvBackupEngine (Sérialisation Base64 & Parsing délimité)
+```
+
+| Composant | Technologie / Librairie | Rôle |
+| :--- | :--- | :--- |
+| **Langage** | **Kotlin 2.0+** | Développement Android moderne et sécurisé |
+| **UI Toolkit** | **Jetpack Compose & Material 3** | Interface déclarative, réactive et fluide |
+| **Chargement d'Images** | **Coil (Compose)** | Rendu asynchrone et mise en cache performante des photos |
+| **Concurrence** | **Kotlin Coroutines & Flow** | Traitements d'images et requêtes I/O asynchrones non-bloquants |
+| **Persistance Locale** | **Room Database + SQLite** | Stockage local et réactif des contacts avec requêtes Flow |
+| **Stockage Privé** | **Android Internal Storage** | Isolation et persistance pérenne des fichiers photos |
+| **Sérialisation** | **Base64 + CSV Engine** | Export/import universel de données avec images intégrées |
+
+---
+
+## 📦 Installation & Exécution en Local
+
+### Prérequis
+- Android Studio Ladybug (ou version plus récente)
+- JDK 17+
+- Appareil Android physique ou Émulateur avec **Android 8.0 (API 26)** ou supérieur
+
+### Étapes
+
+1. **Cloner le dépôt :**
+   ```bash
+   git clone https://github.com/votre-compte/MineTou.git
+   cd MineTou
+   ```
+
+2. **Ouvrir le projet :**
+   Lancez **Android Studio** et ouvrez le dossier racine du projet.
+
+3. **Compiler & Lancer :**
+   - Synchronisez les fichiers Gradle.
+   - Sélectionnez votre appareil cible (smartphone physique recommandé pour tester l'appareil photo et les appels).
+   - Cliquez sur **Run (Shift + F10)**.
+
+---
+
+## 🔒 Confidentialité & Sécurité des Données
+
+- **100% Hors-Ligne & On-Device** : Vos contacts, numéros et photos sont stockés exclusivement en local sur votre smartphone dans la base de données Room et le répertoire privé de l'application.
+- **Aucun Serveur Tiers** : Aucune donnée personnelle, photo ou historique d'appel n'est transmise vers des serveurs distants.
+- **Sauvegardes Autonomes** : Vous êtes l'unique propriétaire de vos fichiers de sauvegarde CSV.
+
+---
+
+## 🤝 Contribution & Contact
+
+Les retours, suggestions et contributions sont chaleureusement accueillis ! Pour toute question, proposition d'amélioration ou opportunité :
+
+- **Auteur** : Mamadou Bobo Diallo (**Tictos**)
+- **Email** : [tictos1213@gmail.com](mailto:tictos1213@gmail.com)
+
+---
+
+## 📜 Licence
+
+Ce projet est distribué sous la licence **MIT**. Vous êtes libre de l'utiliser, de l'étudier et de l'adapter selon vos besoins.
