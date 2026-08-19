@@ -36,10 +36,8 @@
 
 > 🟢 **L'application Mine Tou est officiellement en ligne et disponible en téléchargement gratuit !**
 >
-> [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png" alt="Disponible sur Google Play" height="80">](https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI)
+> [<img src="https://play.google.com/intl/en_us/badges/static/images/badges/fr_badge_web_generic.png" alt="Disponible sur Google Play" height="80">](https://play.google.com/store/apps/details?id=com.tictechdigital.minetoun)
 >
-> 🔗 **Lien direct Play Store** : [https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI](https://play.google.com/store/apps/details?id=VOTRE_PACKAGE_ICI)  
-> *(Note : Remplacez `VOTRE_PACKAGE_ICI` par le lien direct ou le nom de paquet de votre fiche Google Play Console)*
 
 ---
 
