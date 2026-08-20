@@ -11,6 +11,9 @@ interface ContactDao {
     @Query("SELECT * FROM contacts ORDER BY timestamp DESC")
     fun getAllContacts(): Flow<List<Contact>>
 
+    @Query("SELECT * FROM contacts")
+    suspend fun getAllContactsList(): List<Contact>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertContact(contact: Contact)
 

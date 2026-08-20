@@ -14,9 +14,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CallMade
+import androidx.compose.material.icons.filled.CallMissed
+import androidx.compose.material.icons.filled.CallReceived
+import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Phone
@@ -29,8 +34,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -40,13 +43,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.R
+import com.example.data.CallLogEntity
 import com.example.data.Contact
+import com.example.service.CallNotificationListenerService
 import com.example.viewmodel.ContactsViewModel
-
-import androidx.compose.material.icons.filled.CallMade
-import androidx.compose.material.icons.filled.CallMissed
-import androidx.compose.material.icons.filled.CallReceived
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -64,6 +66,13 @@ fun ContactsScreen(
     var selectedTab by remember { mutableStateOf(0) } // 0: Contacts, 1: Journal
     var pendingCallNumber by remember { mutableStateOf<String?>(null) }
     var showMenu by remember { mutableStateOf(false) }
+    var isNotificationServiceEnabled by remember {
+        mutableStateOf(CallNotificationListenerService.isPermissionGranted(context))
+    }
+
+    LaunchedEffect(selectedTab) {
+        isNotificationServiceEnabled = CallNotificationListenerService.isPermissionGranted(context)
+    }
 
     val exportLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("text/csv")
@@ -82,7 +91,7 @@ fun ContactsScreen(
     ) { isGranted ->
         if (isGranted && pendingCallNumber != null) {
             val num = pendingCallNumber!!
-            viewModel.registerCall(num)
+            viewModel.onCallInitiated(num)
             val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$num")).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
@@ -91,8 +100,13 @@ fun ContactsScreen(
         }
     }
 
-    val makeCall = { number: String ->
-        viewModel.registerCall(number)
+    val makeCall = { number: String, contact: Contact? ->
+        if (contact != null) {
+            viewModel.onCallInitiated(contact)
+        } else {
+            viewModel.onCallInitiated(number)
+        }
+
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
             val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -115,19 +129,19 @@ fun ContactsScreen(
                     ) 
                 },
                 navigationIcon = {
-                    if (selectedTab == 0) {
-                        Box {
-                            IconButton(onClick = { showMenu = true }) {
-                                Icon(
-                                    Icons.Default.MoreVert, 
-                                    contentDescription = "Menu",
-                                    modifier = Modifier.size(32.dp)
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
-                            ) {
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(
+                                Icons.Default.MoreVert, 
+                                contentDescription = "Menu",
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            if (selectedTab == 0) {
                                 DropdownMenuItem(
                                     text = { Text("Exporter les contacts (CSV)") },
                                     onClick = {
@@ -140,6 +154,14 @@ fun ContactsScreen(
                                     onClick = {
                                         showMenu = false
                                         importLauncher.launch(arrayOf("text/comma-separated-values", "text/csv", "*/*"))
+                                    }
+                                )
+                            } else {
+                                DropdownMenuItem(
+                                    text = { Text("Vider le journal d'appels") },
+                                    onClick = {
+                                        showMenu = false
+                                        viewModel.clearAllCallLogs()
                                     }
                                 )
                             }
@@ -157,7 +179,7 @@ fun ContactsScreen(
                         ) {
                             Icon(
                                 Icons.Default.PersonAdd, 
-                                contentDescription = "Add Contact",
+                                contentDescription = "Ajouter Contact",
                                 tint = Color.White
                             )
                         }
@@ -205,15 +227,17 @@ fun ContactsScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            "No contacts yet.",
+                            "Aucun contact enregistré.",
                             style = MaterialTheme.typography.titleLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            "Tap the person icon at the top right to add one.",
+                            "Appuyez sur le bouton bleu pour ajouter votre premier contact.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 24.dp)
                         )
                     }
                 }
@@ -225,10 +249,10 @@ fun ContactsScreen(
                         .fillMaxSize()
                         .padding(padding)
                 ) {
-                    items(contacts) { contact ->
+                    items(contacts, key = { it.id }) { contact ->
                         ContactCard(
                             contact = contact, 
-                            onCallClick = { makeCall(contact.phoneNumber) },
+                            onCallClick = { makeCall(contact.phoneNumber, contact) },
                             onDeleteClick = { viewModel.deleteContact(contact.id, context) },
                             onEditClick = { onNavigateToEdit(contact) }
                         )
@@ -236,34 +260,102 @@ fun ContactsScreen(
                 }
             }
         } else {
-            if (callLogs.isEmpty()) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("Aucun journal d'appels récent.")
+            LazyColumn(
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+            ) {
+                if (!isNotificationServiceEnabled) {
+                    item {
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.NotificationsActive,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        "Détection automatique des appels",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    "Pour afficher automatiquement la photo de ceux qui vous appellent ou des appels manqués, autorisez l'accès aux notifications.",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.9f)
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = {
+                                        CallNotificationListenerService.openPermissionSettings(context)
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    modifier = Modifier.align(Alignment.End)
+                                ) {
+                                    Text("Activer l'écoute")
+                                }
+                            }
+                        }
+                    }
                 }
-            } else {
-                LazyColumn(
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                ) {
+
+                if (callLogs.isEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(56.dp),
+                                    tint = MaterialTheme.colorScheme.outline
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text(
+                                    "Aucun appel enregistré pour l'instant.",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    "Les appels émis, reçus et manqués apparaîtront ici.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
                     item {
                         Text(
-                            "Aujourd'hui",
+                            "Appels Récents",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            modifier = Modifier.padding(bottom = 8.dp)
+                            modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
-                    items(callLogs) { log ->
+                    items(callLogs, key = { it.id }) { log ->
+                        val matchedContact = contacts.find { it.id == log.contactId || (it.phoneNumber.isNotBlank() && it.phoneNumber == log.phoneNumber) }
                         CallLogCard(
                             log = log,
-                            onCallClick = { makeCall(log.contact.phoneNumber) }
+                            onCallClick = { makeCall(log.phoneNumber, matchedContact) },
+                            onDeleteClick = { viewModel.deleteCallLog(log.id) }
                         )
                     }
                 }
@@ -283,8 +375,9 @@ fun ContactCard(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(0.8f) // Tall rectangular cards
-            .clip(RoundedCornerShape(64.dp)),
-        shape = RoundedCornerShape(64.dp),
+            .clip(RoundedCornerShape(48.dp))
+            .clickable(onClick = onCallClick),
+        shape = RoundedCornerShape(48.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -299,7 +392,6 @@ fun ContactCard(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Fallback to placeholder
                 Icon(
                     painter = painterResource(id = R.drawable.img_placeholder_avatar),
                     contentDescription = contact.name,
@@ -308,39 +400,52 @@ fun ContactCard(
                 )
             }
             
+            // Subtle dark scrim at the bottom for high contrast text
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(140.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
+                        )
+                    )
+            )
+
             // Name label overlay at the bottom center
             Text(
                 text = contact.name.ifBlank { contact.phoneNumber },
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 36.sp
+                    fontSize = 32.sp
                 ),
-                color = Color.Cyan,
+                color = Color.White,
                 textAlign = TextAlign.Center,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 32.dp)
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
             )
             
             // Action buttons on the right side
             Column(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = 24.dp, end = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(top = 20.dp, end = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 // Delete button
                 IconButton(
                     onClick = onDeleteClick,
                     modifier = Modifier
-                        .size(56.dp)
-                        .background(Color(0xFFE57373), CircleShape) // Red
+                        .size(52.dp)
+                        .background(Color(0xFFE57373), CircleShape)
                 ) {
                     Icon(
                         Icons.Default.Delete, 
-                        contentDescription = "Delete",
-                        tint = Color.Black,
-                        modifier = Modifier.size(28.dp)
+                        contentDescription = "Supprimer",
+                        tint = Color.White,
+                        modifier = Modifier.size(26.dp)
                     )
                 }
                 
@@ -348,14 +453,14 @@ fun ContactCard(
                 IconButton(
                     onClick = onEditClick,
                     modifier = Modifier
-                        .size(56.dp)
-                        .background(Color(0xFF4DD0E1), CircleShape) // Cyan/Light Blue
+                        .size(52.dp)
+                        .background(Color(0xFF4DD0E1), CircleShape)
                 ) {
                     Icon(
                         Icons.Default.Edit, 
-                        contentDescription = "Edit",
+                        contentDescription = "Modifier",
                         tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
                 
@@ -363,14 +468,14 @@ fun ContactCard(
                 IconButton(
                     onClick = onCallClick,
                     modifier = Modifier
-                        .size(56.dp)
-                        .background(Color(0xFF81C784), CircleShape) // Green
+                        .size(52.dp)
+                        .background(Color(0xFF81C784), CircleShape)
                 ) {
                     Icon(
                         Icons.Default.Phone, 
-                        contentDescription = "Call",
+                        contentDescription = "Appeler",
                         tint = Color.White,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(26.dp)
                     )
                 }
             }
@@ -380,82 +485,139 @@ fun ContactCard(
 
 @Composable
 fun CallLogCard(
-    log: com.example.data.CallLogEntry,
-    onCallClick: () -> Unit
+    log: CallLogEntity,
+    onCallClick: () -> Unit,
+    onDeleteClick: () -> Unit
 ) {
-    val formatter = SimpleDateFormat("HH:mm", Locale.getDefault())
-    val timeString = formatter.format(Date(log.timestamp))
+    val formattedDate = formatRelativeTime(log.timestamp)
+
+    val (badgeText, badgeColor, badgeIcon) = when (log.callType) {
+        3 -> Triple("Appel manqué", Color(0xFFE57373), Icons.Default.CallMissed) // Red
+        1 -> Triple("Appel reçu", Color(0xFF4DD0E1), Icons.Default.CallReceived) // Cyan
+        2 -> Triple("Appel émis", Color(0xFF81C784), Icons.Default.CallMade) // Green
+        else -> Triple("Appel", Color(0xFF81C784), Icons.Default.Phone)
+    }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .aspectRatio(1f) // Slightly more square than the contact card
-            .clip(RoundedCornerShape(32.dp))
+            .aspectRatio(1.1f)
+            .clip(RoundedCornerShape(36.dp))
             .clickable(onClick = onCallClick),
-        shape = RoundedCornerShape(32.dp),
+        shape = RoundedCornerShape(36.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (log.contact.imageUri != null) {
+            if (log.imageUri != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(log.contact.imageUri)
+                        .data(log.imageUri)
                         .crossfade(true)
                         .build(),
-                    contentDescription = log.contact.name,
+                    contentDescription = log.name,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                // Fallback
                 Icon(
                     painter = painterResource(id = R.drawable.img_placeholder_avatar),
-                    contentDescription = log.contact.name,
+                    contentDescription = log.name,
                     tint = Color.Unspecified,
                     modifier = Modifier.fillMaxSize()
                 )
             }
+
+            // Dark Scrim for readability
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(130.dp)
+                    .align(Alignment.BottomCenter)
+                    .background(
+                        androidx.compose.ui.graphics.Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.85f))
+                        )
+                    )
+            )
             
-            // Name and time label overlay at the bottom left
+            // Call Type Badge at Top-Left
+            Surface(
+                color = badgeColor,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .align(Alignment.TopStart)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Icon(
+                        imageVector = badgeIcon,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = badgeText,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                }
+            }
+
+            // Quick Delete Action at Top-Right
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier
+                    .padding(16.dp)
+                    .size(40.dp)
+                    .align(Alignment.TopEnd)
+                    .background(Color.Black.copy(alpha = 0.45f), CircleShape)
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = "Supprimer du journal",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+            
+            // Name and Relative Time at the bottom left
             Column(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(start = 24.dp, bottom = 24.dp)
+                    .padding(start = 20.dp, bottom = 20.dp, end = 80.dp)
             ) {
                 Text(
-                    text = log.contact.name.ifBlank { log.contact.phoneNumber },
-                    style = MaterialTheme.typography.headlineMedium.copy(
+                    text = log.name.ifBlank { log.phoneNumber },
+                    style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
-                    color = Color.White
+                    color = Color.White,
+                    maxLines = 1
                 )
                 Text(
-                    text = timeString,
-                    style = MaterialTheme.typography.bodyLarge,
+                    text = formattedDate,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = Color.White.copy(alpha = 0.9f)
                 )
             }
             
-            // Call type icon overlay at the bottom right
-            val (icon, color) = when (log.callType) {
-                2 -> Pair(Icons.Default.CallMade, Color(0xFF81C784)) // Outgoing: Green
-                1 -> Pair(Icons.Default.CallReceived, Color(0xFF4DD0E1)) // Incoming: Cyan
-                3 -> Pair(Icons.Default.CallMissed, Color(0xFFE57373)) // Missed: Red
-                else -> Pair(Icons.Default.CallMade, Color(0xFF81C784))
-            }
-            
-            Box(
+            // Quick Call Button at the bottom right
+            IconButton(
+                onClick = onCallClick,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .padding(end = 24.dp, bottom = 24.dp)
+                    .padding(end = 20.dp, bottom = 20.dp)
                     .size(48.dp)
-                    .background(Color.Black.copy(alpha = 0.5f), CircleShape),
-                contentAlignment = Alignment.Center
+                    .background(Color(0xFF81C784), CircleShape)
             ) {
                 Icon(
-                    imageVector = icon,
-                    contentDescription = "Call Type",
-                    tint = color,
+                    imageVector = Icons.Default.Phone,
+                    contentDescription = "Rappeler",
+                    tint = Color.White,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -463,3 +625,25 @@ fun CallLogCard(
     }
 }
 
+private fun formatRelativeTime(timestamp: Long): String {
+    val now = Calendar.getInstance()
+    val time = Calendar.getInstance().apply { timeInMillis = timestamp }
+
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val timePart = timeFormat.format(Date(timestamp))
+
+    return when {
+        now.get(Calendar.YEAR) == time.get(Calendar.YEAR) &&
+        now.get(Calendar.DAY_OF_YEAR) == time.get(Calendar.DAY_OF_YEAR) -> {
+            "Aujourd'hui à $timePart"
+        }
+        now.get(Calendar.YEAR) == time.get(Calendar.YEAR) &&
+        now.get(Calendar.DAY_OF_YEAR) - time.get(Calendar.DAY_OF_YEAR) == 1 -> {
+            "Hier à $timePart"
+        }
+        else -> {
+            val dateFormat = SimpleDateFormat("dd MMM à HH:mm", Locale.getDefault())
+            dateFormat.format(Date(timestamp))
+        }
+    }
+}

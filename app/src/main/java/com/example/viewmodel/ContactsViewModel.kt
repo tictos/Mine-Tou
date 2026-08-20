@@ -6,7 +6,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.data.CallLogEntry
+import com.example.data.CallLogEntity
 import com.example.data.Contact
 import com.example.data.ContactRepository
 import kotlinx.coroutines.Dispatchers
@@ -30,28 +30,64 @@ class ContactsViewModel(private val repository: ContactRepository) : ViewModel()
             initialValue = emptyList()
         )
 
-    private val _callLogs = MutableStateFlow<List<CallLogEntry>>(emptyList())
-    val callLogs: StateFlow<List<CallLogEntry>> = _callLogs.asStateFlow()
-
-    fun registerCall(contact: Contact) {
-        val newEntry = CallLogEntry(
-            id = java.util.UUID.randomUUID().toString(),
-            contact = contact,
-            timestamp = System.currentTimeMillis(),
-            callType = 2
+    val callLogs: StateFlow<List<CallLogEntity>> = repository.allCallLogs
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
         )
-        _callLogs.value = listOf(newEntry) + _callLogs.value.filterNot { it.contact.id == contact.id && System.currentTimeMillis() - it.timestamp < 1000 }
+
+    private var pendingOutgoingCall: Pair<Contact, Long>? = null
+
+    fun onCallInitiated(contact: Contact) {
+        pendingOutgoingCall = Pair(contact, System.currentTimeMillis())
     }
 
-    fun registerCall(phoneNumber: String) {
+    fun onCallInitiated(phoneNumber: String) {
         viewModelScope.launch {
             val contacts = repository.allContacts.first()
-            val normalizedNumber = phoneNumber.replace("\\s".toRegex(), "")
-            val matchedContact = contacts.find { c -> 
-                val dbNum = c.phoneNumber.replace("\\s".toRegex(), "")
-                (normalizedNumber.isNotBlank() && dbNum.isNotBlank()) && (normalizedNumber.endsWith(dbNum) || dbNum.endsWith(normalizedNumber))
+            val cleanPhone = phoneNumber.filter { it.isDigit() }
+            val matched = contacts.find { c ->
+                val cClean = c.phoneNumber.filter { it.isDigit() }
+                (cleanPhone.isNotBlank() && cClean.isNotBlank()) &&
+                        (cleanPhone.endsWith(cClean) || cClean.endsWith(cleanPhone))
             } ?: Contact(name = phoneNumber, phoneNumber = phoneNumber, imageUri = null)
-            registerCall(matchedContact)
+            onCallInitiated(matched)
+        }
+    }
+
+    fun onAppResumed() {
+        val pending = pendingOutgoingCall ?: return
+        val elapsed = System.currentTimeMillis() - pending.second
+        // If the user spent at least 3.5 seconds outside the app, the call was placed (past the Dual-SIM picker)
+        // If they returned immediately (< 3.5s), they cancelled on the Dual-SIM popup or cancelled right away
+        if (elapsed >= 3500L) {
+            val contact = pending.first
+            viewModelScope.launch {
+                val entry = CallLogEntity(
+                    id = java.util.UUID.randomUUID().toString(),
+                    contactId = if (contact.id != 0) contact.id else null,
+                    name = contact.name.ifBlank { contact.phoneNumber },
+                    phoneNumber = contact.phoneNumber,
+                    imageUri = contact.imageUri,
+                    timestamp = pending.second,
+                    callType = 2 // Outgoing
+                )
+                repository.insertCallLog(entry)
+            }
+        }
+        pendingOutgoingCall = null
+    }
+
+    fun deleteCallLog(id: String) {
+        viewModelScope.launch {
+            repository.deleteCallLogById(id)
+        }
+    }
+
+    fun clearAllCallLogs() {
+        viewModelScope.launch {
+            repository.clearAllCallLogs()
         }
     }
 

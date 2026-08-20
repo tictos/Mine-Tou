@@ -25,12 +25,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         
-        database = Room.databaseBuilder(
-            applicationContext,
-            AppDatabase::class.java, "contacts-db"
-        ).build()
+        database = AppDatabase.getInstance(applicationContext)
         
-        val repository = ContactRepository(database.contactDao())
+        val repository = ContactRepository(database.contactDao(), database.callLogDao())
         val factory = ContactsViewModelFactory(repository)
         viewModel = ViewModelProvider(this, factory)[ContactsViewModel::class.java]
 
@@ -43,6 +40,13 @@ class MainActivity : ComponentActivity() {
                     AppNavigation(viewModel)
                 }
             }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (::viewModel.isInitialized) {
+            viewModel.onAppResumed()
         }
     }
 }
