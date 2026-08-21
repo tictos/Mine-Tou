@@ -123,17 +123,29 @@ class CallNotificationListenerService : NotificationListenerService() {
                 val db = AppDatabase.getInstance(applicationContext)
                 val contacts = db.contactDao().getAllContactsList()
 
-                // Try to find matching contact by phone number or name
-                val matchedContact = findMatchingContact(title, text, contacts)
+                // Only consider contacts that have a photo
+                val contactsWithPhoto = contacts.filter { !it.imageUri.isNullOrBlank() }
+                if (contactsWithPhoto.isEmpty()) {
+                    Log.d(TAG, "No contacts with photos in database. Ignoring call.")
+                    return@launch
+                }
 
-                val logName = matchedContact?.name?.ifBlank { matchedContact.phoneNumber }
-                    ?: title.ifBlank { text.ifBlank { "Appel inconnu" } }
-                val logPhone = matchedContact?.phoneNumber ?: extractPhoneNumber(title, text)
-                val logImage = matchedContact?.imageUri
+                // Try to find matching contact strictly by phone number
+                val matchedContact = findMatchingContact(title, text, contactsWithPhoto)
+
+                // CRITICAL: Only record if contact is in the database and has a photo
+                if (matchedContact == null || matchedContact.imageUri.isNullOrBlank()) {
+                    Log.d(TAG, "Call ignored: caller is not in app contacts with photo ($title / $text)")
+                    return@launch
+                }
+
+                val logName = matchedContact.name.ifBlank { matchedContact.phoneNumber }
+                val logPhone = matchedContact.phoneNumber
+                val logImage = matchedContact.imageUri
 
                 val logEntry = CallLogEntity(
                     id = UUID.randomUUID().toString(),
-                    contactId = matchedContact?.id,
+                    contactId = matchedContact.id,
                     name = logName,
                     phoneNumber = logPhone,
                     imageUri = logImage,
@@ -142,7 +154,7 @@ class CallNotificationListenerService : NotificationListenerService() {
                 )
 
                 db.callLogDao().insertCallLog(logEntry)
-                Log.d(TAG, "Successfully logged call: $logName ($callType)")
+                Log.d(TAG, "Successfully logged call for contact: $logName ($logPhone, $callType)")
             } catch (e: Exception) {
                 Log.e(TAG, "Error saving call log from notification", e)
             }
@@ -151,15 +163,20 @@ class CallNotificationListenerService : NotificationListenerService() {
 
     private fun findMatchingContact(title: String, text: String, contacts: List<Contact>): Contact? {
         val candidateNumbers = listOf(
+            extractCleanPhone(title),
+            extractCleanPhone(text),
             extractDigits(title),
             extractDigits(text)
         ).filter { it.length >= 6 }
 
         for (contact in contacts) {
             val contactDigits = extractDigits(contact.phoneNumber)
-            if (contactDigits.isNotBlank()) {
+            if (contactDigits.length >= 6) {
                 for (cand in candidateNumbers) {
-                    if (cand == contactDigits || cand.endsWith(contactDigits) || contactDigits.endsWith(cand)) {
+                    val candDigits = extractDigits(cand)
+                    if (candDigits == contactDigits || 
+                        (candDigits.length >= 7 && contactDigits.length >= 7 && 
+                            (candDigits.endsWith(contactDigits) || contactDigits.endsWith(candDigits)))) {
                         return contact
                     }
                 }
@@ -173,11 +190,32 @@ class CallNotificationListenerService : NotificationListenerService() {
         return input.filter { it.isDigit() }
     }
 
+    private fun extractCleanPhone(input: String): String {
+        // Regex to isolate international or local phone numbers
+        val phoneRegex = Regex("""(\+?[0-9][0-9\s\-().]{4,}[0-9])""")
+        val match = phoneRegex.find(input)
+        if (match != null) {
+            val raw = match.value.trim()
+            val hasPlus = raw.startsWith("+")
+            val digits = raw.filter { it.isDigit() }
+            if (digits.length >= 6) {
+                return if (hasPlus) "+$digits" else digits
+            }
+        }
+        val digits = input.filter { it.isDigit() }
+        val hasPlus = input.trim().startsWith("+")
+        return if (digits.length >= 6) {
+            if (hasPlus) "+$digits" else digits
+        } else {
+            ""
+        }
+    }
+
     private fun extractPhoneNumber(title: String, text: String): String {
-        val titleDigits = extractDigits(title)
-        if (titleDigits.length >= 6) return title
-        val textDigits = extractDigits(text)
-        if (textDigits.length >= 6) return text
+        val phoneFromTitle = extractCleanPhone(title)
+        if (phoneFromTitle.length >= 6) return phoneFromTitle
+        val phoneFromText = extractCleanPhone(text)
+        if (phoneFromText.length >= 6) return phoneFromText
         return ""
     }
 }

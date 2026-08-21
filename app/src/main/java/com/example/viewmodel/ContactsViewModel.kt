@@ -40,7 +40,11 @@ class ContactsViewModel(private val repository: ContactRepository) : ViewModel()
     private var pendingOutgoingCall: Pair<Contact, Long>? = null
 
     fun onCallInitiated(contact: Contact) {
-        pendingOutgoingCall = Pair(contact, System.currentTimeMillis())
+        if (!contact.imageUri.isNullOrBlank()) {
+            pendingOutgoingCall = Pair(contact, System.currentTimeMillis())
+        } else {
+            pendingOutgoingCall = null
+        }
     }
 
     fun onCallInitiated(phoneNumber: String) {
@@ -48,11 +52,17 @@ class ContactsViewModel(private val repository: ContactRepository) : ViewModel()
             val contacts = repository.allContacts.first()
             val cleanPhone = phoneNumber.filter { it.isDigit() }
             val matched = contacts.find { c ->
-                val cClean = c.phoneNumber.filter { it.isDigit() }
-                (cleanPhone.isNotBlank() && cClean.isNotBlank()) &&
-                        (cleanPhone.endsWith(cClean) || cClean.endsWith(cleanPhone))
-            } ?: Contact(name = phoneNumber, phoneNumber = phoneNumber, imageUri = null)
-            onCallInitiated(matched)
+                !c.imageUri.isNullOrBlank() && c.phoneNumber.isNotBlank() && cleanPhone.isNotBlank() && run {
+                    val cClean = c.phoneNumber.filter { it.isDigit() }
+                    cleanPhone == cClean || 
+                    (cleanPhone.length >= 7 && cClean.length >= 7 && (cleanPhone.endsWith(cClean) || cClean.endsWith(cleanPhone)))
+                }
+            }
+            if (matched != null) {
+                onCallInitiated(matched)
+            } else {
+                pendingOutgoingCall = null
+            }
         }
     }
 
@@ -63,17 +73,19 @@ class ContactsViewModel(private val repository: ContactRepository) : ViewModel()
         // If they returned immediately (< 3.5s), they cancelled on the Dual-SIM popup or cancelled right away
         if (elapsed >= 3500L) {
             val contact = pending.first
-            viewModelScope.launch {
-                val entry = CallLogEntity(
-                    id = java.util.UUID.randomUUID().toString(),
-                    contactId = if (contact.id != 0) contact.id else null,
-                    name = contact.name.ifBlank { contact.phoneNumber },
-                    phoneNumber = contact.phoneNumber,
-                    imageUri = contact.imageUri,
-                    timestamp = pending.second,
-                    callType = 2 // Outgoing
-                )
-                repository.insertCallLog(entry)
+            if (!contact.imageUri.isNullOrBlank()) {
+                viewModelScope.launch {
+                    val entry = CallLogEntity(
+                        id = java.util.UUID.randomUUID().toString(),
+                        contactId = if (contact.id != 0) contact.id else null,
+                        name = contact.name.ifBlank { contact.phoneNumber },
+                        phoneNumber = contact.phoneNumber,
+                        imageUri = contact.imageUri,
+                        timestamp = pending.second,
+                        callType = 2 // Outgoing
+                    )
+                    repository.insertCallLog(entry)
+                }
             }
         }
         pendingOutgoingCall = null

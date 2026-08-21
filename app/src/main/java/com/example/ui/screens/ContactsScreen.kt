@@ -86,35 +86,67 @@ fun ContactsScreen(
         uri?.let { viewModel.importContactsFromCsv(context, it) }
     }
     
+    val sanitizePhoneNumberForCalling = { raw: String ->
+        val trimmed = raw.trim()
+        val hasPlus = trimmed.startsWith("+")
+        val digits = trimmed.filter { it.isDigit() }
+        if (digits.isNotBlank()) {
+            if (hasPlus) "+$digits" else digits
+        } else {
+            trimmed.replace(" ", "")
+        }
+    }
+
+    val launchPhoneCall = { rawNumber: String ->
+        val clean = sanitizePhoneNumberForCalling(rawNumber)
+        if (clean.isNotBlank()) {
+            val uri = Uri.parse("tel:${Uri.encode(clean)}")
+            val intent = Intent(Intent.ACTION_CALL, uri).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            try {
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                try {
+                    val dialIntent = Intent(Intent.ACTION_DIAL, uri).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                    }
+                    context.startActivity(dialIntent)
+                } catch (ex: Exception) {
+                    android.util.Log.e("ContactsScreen", "Error launching call", ex)
+                }
+            }
+        }
+    }
+
     val callPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted && pendingCallNumber != null) {
             val num = pendingCallNumber!!
             viewModel.onCallInitiated(num)
-            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$num")).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-            }
-            context.startActivity(intent)
+            launchPhoneCall(num)
             pendingCallNumber = null
         }
     }
 
     val makeCall = { number: String, contact: Contact? ->
+        val rawTarget = contact?.phoneNumber?.ifBlank { number } ?: number
+        val cleanTarget = sanitizePhoneNumberForCalling(rawTarget)
+
         if (contact != null) {
             viewModel.onCallInitiated(contact)
-        } else {
-            viewModel.onCallInitiated(number)
+        } else if (cleanTarget.isNotBlank()) {
+            viewModel.onCallInitiated(cleanTarget)
         }
 
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
-            val intent = Intent(Intent.ACTION_CALL, Uri.parse("tel:$number")).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        if (cleanTarget.isNotBlank()) {
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED) {
+                launchPhoneCall(cleanTarget)
+            } else {
+                pendingCallNumber = cleanTarget
+                callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
             }
-            context.startActivity(intent)
-        } else {
-            pendingCallNumber = number
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
         }
     }
 
@@ -260,6 +292,29 @@ fun ContactsScreen(
                 }
             }
         } else {
+            val validCallLogs = remember(callLogs, contacts) {
+                callLogs.mapNotNull { log ->
+                    val cleanLogDigits = log.phoneNumber.filter { it.isDigit() }
+                    val matchedContact = contacts.find { c ->
+                        !c.imageUri.isNullOrBlank() && (
+                            (log.contactId != null && c.id == log.contactId) ||
+                            (c.phoneNumber.isNotBlank() && cleanLogDigits.isNotBlank() && (
+                                c.phoneNumber.filter { it.isDigit() } == cleanLogDigits ||
+                                (c.phoneNumber.filter { it.isDigit() }.length >= 7 && cleanLogDigits.length >= 7 && (
+                                    c.phoneNumber.filter { it.isDigit() }.endsWith(cleanLogDigits) ||
+                                    cleanLogDigits.endsWith(c.phoneNumber.filter { it.isDigit() })
+                                ))
+                            ))
+                        )
+                    }
+                    if (matchedContact != null && !matchedContact.imageUri.isNullOrBlank()) {
+                        Pair(log, matchedContact)
+                    } else {
+                        null
+                    }
+                }
+            }
+
             LazyColumn(
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -312,7 +367,7 @@ fun ContactsScreen(
                     }
                 }
 
-                if (callLogs.isEmpty()) {
+                if (validCallLogs.isEmpty()) {
                     item {
                         Box(
                             modifier = Modifier
@@ -335,7 +390,7 @@ fun ContactsScreen(
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    "Les appels émis, reçus et manqués apparaîtront ici.",
+                                    "Seuls les appels liés à vos contacts avec photo apparaîtront ici.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -350,11 +405,11 @@ fun ContactsScreen(
                             modifier = Modifier.padding(vertical = 4.dp)
                         )
                     }
-                    items(callLogs, key = { it.id }) { log ->
-                        val matchedContact = contacts.find { it.id == log.contactId || (it.phoneNumber.isNotBlank() && it.phoneNumber == log.phoneNumber) }
+                    items(validCallLogs, key = { it.first.id }) { (log, contact) ->
                         CallLogCard(
                             log = log,
-                            onCallClick = { makeCall(log.phoneNumber, matchedContact) },
+                            contact = contact,
+                            onCallClick = { makeCall(contact.phoneNumber, contact) },
                             onDeleteClick = { viewModel.deleteCallLog(log.id) }
                         )
                     }
@@ -486,6 +541,7 @@ fun ContactCard(
 @Composable
 fun CallLogCard(
     log: CallLogEntity,
+    contact: Contact,
     onCallClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -498,6 +554,9 @@ fun CallLogCard(
         else -> Triple("Appel", Color(0xFF81C784), Icons.Default.Phone)
     }
 
+    val displayImage = contact.imageUri ?: log.imageUri
+    val displayName = contact.name.ifBlank { contact.phoneNumber }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -508,20 +567,20 @@ fun CallLogCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (log.imageUri != null) {
+            if (displayImage != null) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
-                        .data(log.imageUri)
+                        .data(displayImage)
                         .crossfade(true)
                         .build(),
-                    contentDescription = log.name,
+                    contentDescription = displayName,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
                 Icon(
                     painter = painterResource(id = R.drawable.img_placeholder_avatar),
-                    contentDescription = log.name,
+                    contentDescription = displayName,
                     tint = Color.Unspecified,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -591,7 +650,7 @@ fun CallLogCard(
                     .padding(start = 20.dp, bottom = 20.dp, end = 80.dp)
             ) {
                 Text(
-                    text = log.name.ifBlank { log.phoneNumber },
+                    text = displayName,
                     style = MaterialTheme.typography.headlineSmall.copy(
                         fontWeight = FontWeight.Bold
                     ),
